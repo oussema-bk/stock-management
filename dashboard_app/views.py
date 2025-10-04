@@ -47,11 +47,12 @@ def main_dashboard(request):
     recent_sales = Sale.objects.filter(status='COMPLETED').select_related('customer')[:5]
     
     # Top selling products
+    from django.db.models import F
     top_products = SaleItem.objects.filter(
         sale__status='COMPLETED'
     ).values('product__name').annotate(
         total_sold=Sum('quantity'),
-        total_revenue=Sum('line_total')
+        total_revenue=Sum(F('quantity') * F('unit_price'))
     ).order_by('-total_sold')[:5]
     
     # Low stock alerts
