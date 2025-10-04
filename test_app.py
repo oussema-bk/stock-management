@@ -128,7 +128,7 @@ def test_data_integrity():
 def main():
     """Run all tests"""
     print("=" * 50)
-    print("ELECTRICAL PARTS AGENCY - TEST SUITE")
+    print("AGENCE DE PIÈCES ÉLECTRIQUES - SUITE DE TESTS")
     print("=" * 50)
     
     try:
@@ -140,11 +140,11 @@ def main():
         print("=" * 50)
         print("✓ ALL TESTS PASSED!")
         print("=" * 50)
-        print("\nThe application is ready to use!")
-        print("Access the admin panel at: http://localhost:8000/admin/")
-        print("Username: admin")
-        print("Password: admin123")
-        print("\nAccess the main dashboard at: http://localhost:8000/dashboard/")
+        print("\nL'application est prête à être utilisée !")
+        print("Accédez au panneau d'administration à : http://localhost:8000/admin/")
+        print("Nom d'utilisateur : admin")
+        print("Mot de passe : admin123")
+        print("\nAccédez au tableau de bord principal à : http://localhost:8000/dashboard/")
         
     except Exception as e:
         print(f"✗ Test failed with error: {e}")
