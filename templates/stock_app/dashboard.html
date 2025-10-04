@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Stock Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Statistics Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Products</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_products }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-box fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card-warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Low Stock</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ low_stock_products }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card-danger h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Out of Stock</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ out_of_stock_products }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-x-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card-success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">In Stock</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_products|add:out_of_stock_products|add:low_stock_products|add:"-"|add:out_of_stock_products|add:low_stock_products }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'stock_app:add_movement' %}" class="btn btn-success">
+                        <i class="bi bi-arrow-up"></i> Stock In
+                    </a>
+                    <a href="{% url 'stock_app:add_movement' %}" class="btn btn-warning">
+                        <i class="bi bi-arrow-down"></i> Stock Out
+                    </a>
+                    <a href="{% url 'stock_app:stock_list' %}" class="btn btn-info">
+                        <i class="bi bi-list"></i> View All Stock
+                    </a>
+                    <a href="{% url 'stock_app:alerts' %}" class="btn btn-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Stock Alerts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Movements -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Stock Movements</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_movements %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Reference</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for movement in recent_movements %}
+                                <tr>
+                                    <td>{{ movement.product.name }}</td>
+                                    <td>
+                                        {% if movement.movement_type == 'IN' %}
+                                            <span class="badge bg-success">Stock In</span>
+                                        {% elif movement.movement_type == 'OUT' %}
+                                            <span class="badge bg-warning">Stock Out</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ movement.get_movement_type_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ movement.quantity }}</td>
+                                    <td>{{ movement.reference|default:"-" }}</td>
+                                    <td>{{ movement.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent movements found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Low Stock Alerts -->
+{% if low_stock_items %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Low Stock Alerts
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>SKU</th>
+                                <th>Current Stock</th>
+                                <th>Minimum Stock</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_stock_items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td><code>{{ item.product.sku }}</code></td>
+                                <td>{{ item.current_stock }}</td>
+                                <td>{{ item.minimum_stock }}</td>
+                                <td>
+                                    {% if item.is_out_of_stock %}
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Low Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'stock_app:update_stock_level' item.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i> Update
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

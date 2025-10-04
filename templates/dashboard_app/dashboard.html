@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Statistics Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Products</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_products }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-box fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card-success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Sales</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_sales }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-cart-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card-warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Low Stock Items</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ low_stock_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card-danger h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Out of Stock</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ out_of_stock_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-x-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Revenue Card -->
+    <div class="col-xl-6 col-lg-7">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Revenue Overview</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Revenue</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_revenue|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Today's Revenue</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ today_revenue|floatformat:2 }}</div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-sm-6">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Today's Sales</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_sales }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Stock Value</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_stock_value|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-xl-6 col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 mb-3">
+                        <a href="{% url 'products_app:product_create' %}" class="btn btn-primary btn-block">
+                            <i class="bi bi-plus"></i> Add Product
+                        </a>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <a href="{% url 'stock_app:add_movement' %}" class="btn btn-success btn-block">
+                            <i class="bi bi-arrow-up"></i> Stock In
+                        </a>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <a href="{% url 'sales_app:create_sale' %}" class="btn btn-info btn-block">
+                            <i class="bi bi-cart-plus"></i> New Sale
+                        </a>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <a href="{% url 'stock_app:alerts' %}" class="btn btn-warning btn-block">
+                            <i class="bi bi-exclamation-triangle"></i> Stock Alerts
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Sales -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Sales</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Sale #</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in recent_sales %}
+                                <tr>
+                                    <td><a href="{% url 'sales_app:sale_detail' sale.pk %}">#{{ sale.id }}</a></td>
+                                    <td>{{ sale.customer.name }}</td>
+                                    <td>${{ sale.total_amount|floatformat:2 }}</td>
+                                    <td>{{ sale.sale_date|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent sales found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Top Selling Products</h6>
+            </div>
+            <div class="card-body">
+                {% if top_products %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in top_products %}
+                                <tr>
+                                    <td>{{ product.product__name }}</td>
+                                    <td>{{ product.total_sold }}</td>
+                                    <td>${{ product.total_revenue|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No sales data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Low Stock Alerts -->
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Low Stock Alerts
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if low_stock_items %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Current Stock</th>
+                                    <th>Minimum Stock</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_stock_items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.product.sku }}</td>
+                                    <td>{{ item.current_stock }}</td>
+                                    <td>{{ item.minimum_stock }}</td>
+                                    <td>
+                                        {% if item.is_out_of_stock %}
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Low Stock</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-success">All products are well stocked!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
