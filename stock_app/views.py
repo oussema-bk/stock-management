@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+import csv
 from .models import StockMovement, StockLevel
 from .forms import StockMovementForm, StockLevelForm
 from products_app.models import Product
@@ -168,3 +169,50 @@ def stock_api(request):
         })
     
     return JsonResponse(data, safe=False)
+
+
+@login_required
+def export_stock(request):
+    """Export stock levels to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="stock_levels.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Product', 'SKU', 'Current Stock', 'Minimum Stock', 'Maximum Stock', 'Status'])
+    
+    stock_levels = StockLevel.objects.select_related('product').all()
+    for stock in stock_levels:
+        writer.writerow([
+            stock.product.name,
+            stock.product.sku,
+            stock.current_stock,
+            stock.minimum_stock,
+            stock.maximum_stock,
+            stock.stock_status
+        ])
+    
+    return response
+
+
+@login_required
+def export_movements(request):
+    """Export stock movements to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="stock_movements.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Product', 'Type', 'Quantity', 'Reference', 'Created By', 'Notes'])
+    
+    movements = StockMovement.objects.select_related('product', 'created_by').all()
+    for movement in movements:
+        writer.writerow([
+            movement.created_at.strftime('%Y-%m-%d %H:%M'),
+            movement.product.name,
+            movement.get_movement_type_display(),
+            movement.quantity,
+            movement.reference or '',
+            movement.created_by.get_full_name() or movement.created_by.username,
+            movement.notes or ''
+        ])
+    
+    return response

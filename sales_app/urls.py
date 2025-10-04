@@ -13,4 +13,6 @@ urlpatterns = [
     path('customers/create/', views.customer_create, name='customer_create'),
     path('analytics/', views.sales_analytics, name='analytics'),
     path('api/', views.sales_api, name='sales_api'),
+    path('export/', views.export_sales, name='export_sales'),
+    path('customers/export/', views.export_customers, name='export_customers'),
 ]

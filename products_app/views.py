@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import HttpResponse
+import csv
 from .models import Product, Category
 from .forms import ProductForm, CategoryForm
 
@@ -105,3 +107,27 @@ def category_create(request):
         form = CategoryForm()
     
     return render(request, 'products_app/category_form.html', {'form': form, 'title': 'Create Category'})
+
+
+@login_required
+def export_products(request):
+    """Export products to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="products.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'SKU', 'Category', 'Price', 'Cost Price', 'Status', 'Description'])
+    
+    products = Product.objects.select_related('category').all()
+    for product in products:
+        writer.writerow([
+            product.name,
+            product.sku,
+            product.category.name,
+            product.price,
+            product.cost_price,
+            'Active' if product.is_active else 'Inactive',
+            product.description
+        ])
+    
+    return response

@@ -3,9 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
+import csv
 from .models import Customer, Sale, SaleItem
 from .forms import CustomerForm, SaleForm, SaleItemForm
 from products_app.models import Product
@@ -252,3 +253,48 @@ def sales_api(request):
     }
     
     return JsonResponse(data)
+
+
+@login_required
+def export_sales(request):
+    """Export sales to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="sales.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Sale ID', 'Customer', 'Date', 'Status', 'Total Amount', 'Created By'])
+    
+    sales = Sale.objects.select_related('customer', 'created_by').all()
+    for sale in sales:
+        writer.writerow([
+            sale.id,
+            sale.customer.name,
+            sale.sale_date.strftime('%Y-%m-%d %H:%M'),
+            sale.get_status_display(),
+            sale.total_amount,
+            sale.created_by.get_full_name() or sale.created_by.username
+        ])
+    
+    return response
+
+
+@login_required
+def export_customers(request):
+    """Export customers to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="customers.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'Email', 'Phone', 'Address', 'Created Date'])
+    
+    customers = Customer.objects.all()
+    for customer in customers:
+        writer.writerow([
+            customer.name,
+            customer.email or '',
+            customer.phone or '',
+            customer.address or '',
+            customer.created_at.strftime('%Y-%m-%d')
+        ])
+    
+    return response

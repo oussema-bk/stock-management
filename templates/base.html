@@ -133,16 +133,51 @@
                     <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-download"></i>
-                                Export
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-download"></i>
+                                    Export
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'products_app:export_products' %}">
+                                        <i class="bi bi-box"></i> Products
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'stock_app:export_stock' %}">
+                                        <i class="bi bi-stack"></i> Stock Levels
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'stock_app:export_movements' %}">
+                                        <i class="bi bi-arrow-left-right"></i> Stock Movements
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'sales_app:export_sales' %}">
+                                        <i class="bi bi-cart-check"></i> Sales
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'sales_app:export_customers' %}">
+                                        <i class="bi bi-people"></i> Customers
+                                    </a></li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-sm btn-primary">
-                                <i class="bi bi-plus"></i>
-                                Quick Add
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-plus"></i>
+                                    Quick Add
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'products_app:product_create' %}">
+                                        <i class="bi bi-box"></i> Product
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'stock_app:add_movement' %}">
+                                        <i class="bi bi-arrow-up"></i> Stock Movement
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'sales_app:create_sale' %}">
+                                        <i class="bi bi-cart-plus"></i> Sale
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'sales_app:customer_create' %}">
+                                        <i class="bi bi-person-plus"></i> Customer
+                                    </a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
