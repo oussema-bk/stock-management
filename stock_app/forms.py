@@ -7,6 +7,13 @@ class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
         fields = ['product', 'movement_type', 'quantity', 'reference', 'notes']
+        labels = {
+            'product': 'Produit',
+            'movement_type': 'Type de mouvement',
+            'quantity': 'Quantité',
+            'reference': 'Référence',
+            'notes': 'Notes',
+        }
         widgets = {
             'product': forms.Select(attrs={'class': 'form-control'}),
             'movement_type': forms.Select(attrs={'class': 'form-control'}),
@@ -20,6 +27,10 @@ class StockLevelForm(forms.ModelForm):
     class Meta:
         model = StockLevel
         fields = ['minimum_stock', 'maximum_stock']
+        labels = {
+            'minimum_stock': 'Stock minimum',
+            'maximum_stock': 'Stock maximum',
+        }
         widgets = {
             'minimum_stock': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'maximum_stock': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),

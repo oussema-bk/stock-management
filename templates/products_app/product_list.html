@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Products{% endblock %}
+{% block page_title %}Produits{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Products</h2>
+    <h2>Produits</h2>
     <div class="btn-group">
         <a href="{% url 'products_app:export_products' %}" class="btn btn-outline-success">
-            <i class="bi bi-download"></i> Export CSV
+            <i class="bi bi-download"></i> Exporter CSV
         </a>
         <a href="{% url 'products_app:product_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus"></i> Add Product
+            <i class="bi bi-plus"></i> Ajouter Produit
         </a>
     </div>
 </div>
@@ -21,11 +21,11 @@
         <form method="get" class="row g-3">
             <div class="col-md-4">
                 <input type="text" class="form-control" name="search" 
-                       placeholder="Search products..." value="{{ search_query }}">
+                       placeholder="Rechercher des produits..." value="{{ search_query }}">
             </div>
             <div class="col-md-3">
                 <select class="form-control" name="category">
-                    <option value="">All Categories</option>
+                    <option value="">Toutes les Catégories</option>
                     {% for category in categories %}
                         <option value="{{ category.id }}" 
                                 {% if category_filter == category.id|stringformat:"s" %}selected{% endif %}>
@@ -36,12 +36,12 @@
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-outline-primary">
-                    <i class="bi bi-search"></i> Search
+                    <i class="bi bi-search"></i> Rechercher
                 </button>
             </div>
             <div class="col-md-3">
                 <a href="{% url 'products_app:category_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-tags"></i> Manage Categories
+                    <i class="bi bi-tags"></i> Gérer les Catégories
                 </a>
             </div>
         </form>
@@ -57,12 +57,12 @@
                     <thead>
                         <tr>
                             <th>Image</th>
-                            <th>Name</th>
-                            <th>SKU</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Cost Price</th>
-                            <th>Status</th>
+                            <th>Nom</th>
+                            <th>Référence</th>
+                            <th>Catégorie</th>
+                            <th>Prix</th>
+                            <th>Prix d'Achat</th>
+                            <th>Statut</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -92,9 +92,9 @@
                             <td>${{ product.cost_price|floatformat:2 }}</td>
                             <td>
                                 {% if product.is_active %}
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge bg-success">Actif</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactive</span>
+                                    <span class="badge bg-secondary">Inactif</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -121,29 +121,29 @@
             
             <!-- Pagination -->
             {% if products.has_other_pages %}
-                <nav aria-label="Products pagination">
+                <nav aria-label="Pagination des produits">
                     <ul class="pagination justify-content-center">
                         {% if products.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">First</a>
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Premier</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ products.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Previous</a>
+                                <a class="page-link" href="?page={{ products.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Précédent</a>
                             </li>
                         {% endif %}
                         
                         <li class="page-item active">
                             <span class="page-link">
-                                Page {{ products.number }} of {{ products.paginator.num_pages }}
+                                Page {{ products.number }} sur {{ products.paginator.num_pages }}
                             </span>
                         </li>
                         
                         {% if products.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ products.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Next</a>
+                                <a class="page-link" href="?page={{ products.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Suivant</a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ products.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Last</a>
+                                <a class="page-link" href="?page={{ products.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Dernier</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -152,10 +152,10 @@
         {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-box display-1 text-muted"></i>
-                <h4 class="text-muted mt-3">No products found</h4>
-                <p class="text-muted">Start by adding your first product.</p>
+                <h4 class="text-muted mt-3">Aucun produit trouvé</h4>
+                <p class="text-muted">Commencez par ajouter votre premier produit.</p>
                 <a href="{% url 'products_app:product_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus"></i> Add Product
+                    <i class="bi bi-plus"></i> Ajouter Produit
                 </a>
             </div>
         {% endif %}

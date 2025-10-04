@@ -7,6 +7,12 @@ class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = ['name', 'email', 'phone', 'address']
+        labels = {
+            'name': 'Nom',
+            'email': 'Email',
+            'phone': 'Téléphone',
+            'address': 'Adresse',
+        }
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
@@ -19,6 +25,11 @@ class SaleForm(forms.ModelForm):
     class Meta:
         model = Sale
         fields = ['customer', 'status', 'notes']
+        labels = {
+            'customer': 'Client',
+            'status': 'Statut',
+            'notes': 'Notes',
+        }
         widgets = {
             'customer': forms.Select(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
@@ -30,6 +41,11 @@ class SaleItemForm(forms.ModelForm):
     class Meta:
         model = SaleItem
         fields = ['product', 'quantity', 'unit_price']
+        labels = {
+            'product': 'Produit',
+            'quantity': 'Quantité',
+            'unit_price': 'Prix unitaire',
+        }
         widgets = {
             'product': forms.Select(attrs={'class': 'form-control'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),

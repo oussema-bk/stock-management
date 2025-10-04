@@ -6,6 +6,16 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ['name', 'description', 'sku', 'category', 'price', 'cost_price', 'image', 'is_active']
+        labels = {
+            'name': 'Nom',
+            'description': 'Description',
+            'sku': 'Référence',
+            'category': 'Catégorie',
+            'price': 'Prix de vente',
+            'cost_price': 'Prix d\'achat',
+            'image': 'Image',
+            'is_active': 'Actif',
+        }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -22,6 +32,10 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ['name', 'description']
+        labels = {
+            'name': 'Nom',
+            'description': 'Description',
+        }
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),

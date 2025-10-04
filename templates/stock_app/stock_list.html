@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block page_title %}Stock Levels{% endblock %}
+{% block page_title %}Niveaux de Stock{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Stock Levels</h2>
+    <h2>Niveaux de Stock</h2>
     <div class="btn-group">
         <a href="{% url 'stock_app:export_stock' %}" class="btn btn-outline-success">
-            <i class="bi bi-download"></i> Export CSV
+            <i class="bi bi-download"></i> Exporter CSV
         </a>
         <a href="{% url 'stock_app:add_movement' %}" class="btn btn-primary">
-            <i class="bi bi-plus"></i> Add Stock Movement
+            <i class="bi bi-plus"></i> Ajouter Mouvement
         </a>
     </div>
 </div>
