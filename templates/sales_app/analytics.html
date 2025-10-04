@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Sales Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Sales Analytics</h2>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="refreshCharts()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <button class="btn btn-outline-secondary" onclick="exportData()">
+            <i class="bi bi-download"></i> Export
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Daily Sales Chart -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Daily Sales (Last 30 Days)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="dailySalesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Sales Chart -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Monthly Sales</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlySalesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Revenue Chart -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Revenue Trend</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Products Chart -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Top Products</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="topProductsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Sales Data</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Sales Count</th>
+                                <th>Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesDataTable">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart.js configuration
+Chart.defaults.font.family = 'Nunito', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif';
+Chart.defaults.color = '#858796';
+
+// Daily Sales Chart
+const dailySalesCtx = document.getElementById('dailySalesChart').getContext('2d');
+const dailySalesChart = new Chart(dailySalesCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Sales Count',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }, {
+            label: 'Revenue',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1,
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Sales Count'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Revenue ($)'
+                },
+                grid: {
+                    drawOnChartArea: false,
+                },
+            }
+        }
+    }
+});
+
+// Monthly Sales Chart
+const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
+const monthlySalesChart = new Chart(monthlySalesCtx, {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Sales',
+            data: [],
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Load data from API
+async function loadAnalyticsData() {
+    try {
+        const response = await fetch('/sales/api/');
+        const data = await response.json();
+        
+        // Update daily sales chart
+        if (data.daily_sales) {
+            const labels = data.daily_sales.map(item => item.day);
+            const salesData = data.daily_sales.map(item => item.total_sales);
+            const revenueData = data.daily_sales.map(item => parseFloat(item.total_revenue) || 0);
+            
+            dailySalesChart.data.labels = labels;
+            dailySalesChart.data.datasets[0].data = salesData;
+            dailySalesChart.data.datasets[1].data = revenueData;
+            dailySalesChart.update();
+            
+            // Update data table
+            updateDataTable(data.daily_sales);
+        }
+        
+    } catch (error) {
+        console.error('Error loading analytics data:', error);
+    }
+}
+
+function updateDataTable(data) {
+    const tbody = document.getElementById('salesDataTable');
+    tbody.innerHTML = '';
+    
+    data.forEach(item => {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = item.day;
+        row.insertCell(1).textContent = item.total_sales;
+        row.insertCell(2).textContent = '$' + (parseFloat(item.total_revenue) || 0).toFixed(2);
+    });
+}
+
+function refreshCharts() {
+    loadAnalyticsData();
+}
+
+function exportData() {
+    // Simple CSV export
+    const table = document.getElementById('salesDataTable');
+    let csv = 'Date,Sales Count,Revenue\n';
+    
+    for (let i = 0; i < table.rows.length; i++) {
+        const row = table.rows[i];
+        const cells = row.cells;
+        csv += cells[0].textContent + ',' + cells[1].textContent + ',' + cells[2].textContent + '\n';
+    }
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sales_analytics.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// Load data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalyticsData();
+});
+</script>
+{% endblock %}

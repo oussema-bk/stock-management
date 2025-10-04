@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Stock Movements{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Stock Movements</h2>
+    <a href="{% url 'stock_app:add_movement' %}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> Add Movement
+    </a>
+</div>
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" 
+                       placeholder="Search products..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-control" name="product">
+                    <option value="">All Products</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}" 
+                                {% if product_filter == product.id|stringformat:"s" %}selected{% endif %}>
+                            {{ product.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-control" name="type">
+                    <option value="">All Types</option>
+                    <option value="IN" {% if type_filter == 'IN' %}selected{% endif %}>Stock In</option>
+                    <option value="OUT" {% if type_filter == 'OUT' %}selected{% endif %}>Stock Out</option>
+                    <option value="ADJUSTMENT" {% if type_filter == 'ADJUSTMENT' %}selected{% endif %}>Adjustment</option>
+                    <option value="TRANSFER" {% if type_filter == 'TRANSFER' %}selected{% endif %}>Transfer</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Movements Table -->
+<div class="card">
+    <div class="card-body">
+        {% if movements %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Product</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Reference</th>
+                            <th>Created By</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movement in movements %}
+                        <tr>
+                            <td>{{ movement.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <strong>{{ movement.product.name }}</strong>
+                                <br><small class="text-muted">{{ movement.product.sku }}</small>
+                            </td>
+                            <td>
+                                {% if movement.movement_type == 'IN' %}
+                                    <span class="badge bg-success">Stock In</span>
+                                {% elif movement.movement_type == 'OUT' %}
+                                    <span class="badge bg-warning">Stock Out</span>
+                                {% elif movement.movement_type == 'ADJUSTMENT' %}
+                                    <span class="badge bg-info">Adjustment</span>
+                                {% elif movement.movement_type == 'TRANSFER' %}
+                                    <span class="badge bg-secondary">Transfer</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="h5 {% if movement.movement_type == 'IN' %}text-success{% elif movement.movement_type == 'OUT' %}text-warning{% else %}text-info{% endif %}">
+                                    {% if movement.movement_type == 'IN' %}+{% elif movement.movement_type == 'OUT' %}-{% endif %}{{ movement.quantity }}
+                                </span>
+                            </td>
+                            <td>{{ movement.reference|default:"-" }}</td>
+                            <td>{{ movement.created_by.get_full_name|default:movement.created_by.username }}</td>
+                            <td>{{ movement.notes|truncatechars:50|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if movements.has_other_pages %}
+                <nav aria-label="Movements pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if movements.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if product_filter %}&product={{ product_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ movements.previous_page_number }}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Page {{ movements.number }} of {{ movements.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if movements.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ movements.next_page_number }}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ movements.paginator.num_pages }}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">Last</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-arrow-left-right display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No movements found</h4>
+                <p class="text-muted">Start by adding stock movements.</p>
+                <a href="{% url 'stock_app:add_movement' %}" class="btn btn-primary">
+                    <i class="bi bi-plus"></i> Add Movement
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
