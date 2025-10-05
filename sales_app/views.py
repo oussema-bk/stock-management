@@ -240,17 +240,20 @@ def customer_create(request):
 
 @login_required
 def sales_analytics(request):
+    from django.db.models.functions import TruncDate, TruncMonth
+    
     # Sales data for charts
     end_date = timezone.now().date()
-    start_date = end_date - timedelta(days=30)
+    start_date_daily = end_date - timedelta(days=90)  # Last 90 days
+    start_date_monthly = end_date - timedelta(days=365)  # Last year
     
-    # Daily sales for the last 30 days
+    # Daily sales for the last 90 days
     daily_sales = Sale.objects.filter(
-        sale_date__date__gte=start_date,
+        sale_date__date__gte=start_date_daily,
         sale_date__date__lte=end_date,
         status='COMPLETED'
-    ).extra(
-        select={'day': 'date(sale_date)'}
+    ).annotate(
+        day=TruncDate('sale_date')
     ).values('day').annotate(
         total_sales=Count('id'),
         total_revenue=Sum('total_amount')
@@ -258,13 +261,14 @@ def sales_analytics(request):
     
     # Monthly sales for the last 12 months
     monthly_sales = Sale.objects.filter(
+        sale_date__date__gte=start_date_monthly,
         status='COMPLETED'
-    ).extra(
-        select={'month': 'strftime("%Y-%m", sale_date)'}
+    ).annotate(
+        month=TruncMonth('sale_date')
     ).values('month').annotate(
         total_sales=Count('id'),
         total_revenue=Sum('total_amount')
-    ).order_by('month')[:12]
+    ).order_by('month')
     
     context = {
         'daily_sales': list(daily_sales),
@@ -276,22 +280,33 @@ def sales_analytics(request):
 @login_required
 def sales_api(request):
     """API endpoint for sales data"""
+    from django.db.models.functions import TruncDate
+    
     end_date = timezone.now().date()
-    start_date = end_date - timedelta(days=30)
+    start_date = end_date - timedelta(days=90)  # Last 90 days
     
     daily_sales = Sale.objects.filter(
         sale_date__date__gte=start_date,
         sale_date__date__lte=end_date,
         status='COMPLETED'
-    ).extra(
-        select={'day': 'date(sale_date)'}
+    ).annotate(
+        day=TruncDate('sale_date')
     ).values('day').annotate(
         total_sales=Count('id'),
         total_revenue=Sum('total_amount')
     ).order_by('day')
     
+    # Convert to list and format dates as strings
+    sales_data = []
+    for item in daily_sales:
+        sales_data.append({
+            'day': item['day'].strftime('%Y-%m-%d') if item['day'] else '',
+            'total_sales': item['total_sales'],
+            'total_revenue': float(item['total_revenue'] or 0)
+        })
+    
     data = {
-        'daily_sales': list(daily_sales),
+        'daily_sales': sales_data,
     }
     
     return JsonResponse(data)

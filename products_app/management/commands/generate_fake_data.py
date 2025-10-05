@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.utils import timezone
 from faker import Faker
 from decimal import Decimal
+from datetime import timedelta
 import random
 from products_app.models import Category, Product
 from stock_app.models import StockLevel, StockMovement
@@ -153,15 +155,24 @@ class Command(BaseCommand):
         pending_count = 0
         failed_count = 0
         
+        # Calculate date range (last 365 days)
+        now = timezone.now()
+        start_date = now - timedelta(days=365)
+        
         for i in range(options['sales']):
             customer = random.choice(customers)
+            
+            # Generate random date within the last year
+            random_days = random.randint(0, 365)
+            sale_date = start_date + timedelta(days=random_days)
             
             # All sales start as PENDING
             sale = Sale.objects.create(
                 customer=customer,
                 status='PENDING',
                 notes=fake.text(max_nb_chars=100),
-                created_by=admin_user
+                created_by=admin_user,
+                sale_date=sale_date
             )
             
             # Add 1-5 items to each sale

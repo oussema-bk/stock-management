@@ -23,7 +23,7 @@ def stock_dashboard(request):
     # Low stock alerts
     low_stock_items = StockLevel.objects.filter(
         current_stock__lte=F('minimum_stock')
-    ).exclude(current_stock=0).select_related('product')
+    ).select_related('product')
     
     context = {
         'total_products': total_products,
@@ -169,7 +169,7 @@ def update_stock_level(request, pk):
 def stock_alerts(request):
     low_stock_items = StockLevel.objects.filter(
         current_stock__lte=F('minimum_stock')
-    ).exclude(current_stock=0).select_related('product')
+    ).select_related('product')
     
     return render(request, 'stock_app/alerts.html', {'low_stock_items': low_stock_items})
 
