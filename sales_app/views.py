@@ -5,11 +5,14 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
+from django.db import transaction
 from datetime import datetime, timedelta
 import csv
+import io
 from .models import Customer, Sale, SaleItem
 from .forms import CustomerForm, SaleForm, SaleItemForm
 from products_app.models import Product
+from stock_app.models import StockLevel, StockMovement
 
 
 @login_required
@@ -139,12 +142,29 @@ def add_sale_item(request, sale_pk):
         if form.is_valid():
             sale_item = form.save(commit=False)
             sale_item.sale = sale
-            sale_item.save()
             
-            # Update sale total
+            # Check stock availability
+            stock_level = StockLevel.objects.filter(product=sale_item.product).first()
+            if not stock_level:
+                messages.error(
+                    request,
+                    f'Aucun stock trouvé pour {sale_item.product.name}'
+                )
+                return redirect('sales_app:sale_detail', pk=sale.pk)
+            
+            if stock_level.current_stock < sale_item.quantity:
+                messages.error(
+                    request,
+                    f'Stock insuffisant pour {sale_item.product.name}. '
+                    f'Disponible: {stock_level.current_stock}, '
+                    f'Demandé: {sale_item.quantity}'
+                )
+                return redirect('sales_app:sale_detail', pk=sale.pk)
+            
+            sale_item.save()
             sale.calculate_total()
             
-            messages.success(request, 'Item added to sale!')
+            messages.success(request, 'Article ajouté à la vente!')
             return redirect('sales_app:sale_detail', pk=sale.pk)
     else:
         form = SaleItemForm()
@@ -155,6 +175,28 @@ def add_sale_item(request, sale_pk):
         'title': 'Add Item to Sale'
     }
     return render(request, 'sales_app/sale_item_form.html', context)
+
+
+@login_required
+def complete_sale(request, pk):
+    sale = get_object_or_404(Sale, pk=pk)
+    
+    try:
+        sale.complete_sale(request.user)
+        messages.success(request, 'Vente complétée avec succès! Le stock a été réduit.')
+        return redirect('sales_app:sale_detail', pk=sale.pk)
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('sales_app:sale_detail', pk=sale.pk)
+
+
+@login_required
+def cancel_sale(request, pk):
+    sale = get_object_or_404(Sale, pk=pk)
+    
+    sale.cancel_sale(request.user)
+    messages.success(request, 'Vente annulée avec succès! Le stock a été restauré.')
+    return redirect('sales_app:sale_detail', pk=sale.pk)
 
 
 @login_required
@@ -298,3 +340,86 @@ def export_customers(request):
         ])
     
     return response
+
+
+@login_required
+def import_customers(request):
+    """Import customers from CSV"""
+    if request.method == 'POST':
+        if 'csv_file' not in request.FILES:
+            messages.error(request, 'Veuillez sélectionner un fichier CSV')
+            return redirect('sales_app:import_customers')
+        
+        csv_file = request.FILES['csv_file']
+        
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Le fichier doit être au format CSV')
+            return redirect('sales_app:import_customers')
+        
+        try:
+            # Read the CSV file
+            decoded_file = csv_file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+            
+            created_count = 0
+            updated_count = 0
+            error_count = 0
+            errors = []
+            
+            for row_num, row in enumerate(reader, start=2):
+                try:
+                    name = row.get('Name', '').strip()
+                    if not name:
+                        errors.append(f"Ligne {row_num}: Nom manquant")
+                        error_count += 1
+                        continue
+                    
+                    email = row.get('Email', '').strip()
+                    
+                    # Check if customer exists by name or email
+                    customer_filter = Q(name=name)
+                    if email:
+                        customer_filter |= Q(email=email)
+                    
+                    existing_customer = Customer.objects.filter(customer_filter).first()
+                    
+                    customer_data = {
+                        'name': name,
+                        'email': email,
+                        'phone': row.get('Phone', '').strip(),
+                        'address': row.get('Address', '').strip(),
+                    }
+                    
+                    if existing_customer:
+                        # Update existing customer
+                        for key, value in customer_data.items():
+                            setattr(existing_customer, key, value)
+                        existing_customer.save()
+                        updated_count += 1
+                    else:
+                        # Create new customer
+                        Customer.objects.create(**customer_data)
+                        created_count += 1
+                        
+                except Exception as e:
+                    errors.append(f"Ligne {row_num}: {str(e)}")
+                    error_count += 1
+            
+            # Show results
+            if created_count > 0:
+                messages.success(request, f'{created_count} client(s) créé(s)')
+            if updated_count > 0:
+                messages.success(request, f'{updated_count} client(s) mis à jour')
+            if error_count > 0:
+                messages.warning(request, f'{error_count} erreur(s) rencontrée(s)')
+                for error in errors[:5]:  # Show first 5 errors
+                    messages.error(request, error)
+            
+            return redirect('sales_app:customer_list')
+            
+        except Exception as e:
+            messages.error(request, f'Erreur lors de l\'importation: {str(e)}')
+            return redirect('sales_app:import_customers')
+    
+    return render(request, 'sales_app/import_customers.html')

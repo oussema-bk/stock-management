@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import transaction
 from products_app.models import Product
 from decimal import Decimal
 
@@ -48,6 +49,68 @@ class Sale(models.Model):
         self.total_amount = total
         self.save()
         return total
+    
+    def complete_sale(self, user):
+        """Complete the sale and reduce stock"""
+        from stock_app.models import StockLevel, StockMovement
+        
+        if self.status == 'COMPLETED':
+            return  # Already completed
+        
+        with transaction.atomic():
+            for item in self.sale_items.all():
+                stock_level = StockLevel.objects.filter(product=item.product).first()
+                if not stock_level or stock_level.current_stock < item.quantity:
+                    raise ValueError(
+                        f'Stock insuffisant pour {item.product.name}'
+                    )
+                
+                # Reduce stock
+                stock_level.current_stock -= item.quantity
+                stock_level.save()
+                
+                # Create stock movement
+                StockMovement.objects.create(
+                    product=item.product,
+                    movement_type='OUT',
+                    quantity=item.quantity,
+                    reference=f'Vente #{self.id}',
+                    notes=f'Vente à {self.customer.name}',
+                    created_by=user
+                )
+            
+            self.status = 'COMPLETED'
+            self.save()
+    
+    def cancel_sale(self, user):
+        """Cancel the sale and restore stock"""
+        from stock_app.models import StockLevel, StockMovement
+        
+        if self.status != 'COMPLETED':
+            self.status = 'CANCELLED'
+            self.save()
+            return
+        
+        with transaction.atomic():
+            for item in self.sale_items.all():
+                stock_level = StockLevel.objects.filter(product=item.product).first()
+                if stock_level:
+                    # Restore stock
+                    stock_level.current_stock += item.quantity
+                    stock_level.save()
+                    
+                    # Create stock movement
+                    StockMovement.objects.create(
+                        product=item.product,
+                        movement_type='IN',
+                        quantity=item.quantity,
+                        reference=f'Annulation Vente #{self.id}',
+                        notes=f'Annulation vente à {self.customer.name}',
+                        created_by=user
+                    )
+            
+            self.status = 'CANCELLED'
+            self.save()
 
 
 class SaleItem(models.Model):
@@ -66,4 +129,6 @@ class SaleItem(models.Model):
     
     @property
     def line_total(self):
-        return self.quantity * self.unit_price
+        if self.quantity is not None and self.unit_price is not None:
+            return self.quantity * self.unit_price
+        return Decimal('0.00')

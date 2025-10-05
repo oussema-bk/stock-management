@@ -19,8 +19,11 @@
                     {% csrf_token %}
                     
                     <div class="mb-3">
-                        <label for="{{ form.product.id_for_label }}" class="form-label">Product *</label>
+                        <label for="{{ form.product.id_for_label }}" class="form-label">{{ form.product.label }} *</label>
                         {{ form.product }}
+                        {% if form.product.help_text %}
+                            <div class="form-text">{{ form.product.help_text }}</div>
+                        {% endif %}
                         {% if form.product.errors %}
                             <div class="text-danger">{{ form.product.errors }}</div>
                         {% endif %}
@@ -28,19 +31,25 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantity *</label>
+                            <label for="{{ form.quantity.id_for_label }}" class="form-label">{{ form.quantity.label }} *</label>
                             {{ form.quantity }}
+                            {% if form.quantity.help_text %}
+                                <div class="form-text">{{ form.quantity.help_text }}</div>
+                            {% endif %}
                             {% if form.quantity.errors %}
                                 <div class="text-danger">{{ form.quantity.errors }}</div>
                             {% endif %}
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.unit_price.id_for_label }}" class="form-label">Unit Price *</label>
+                            <label for="{{ form.unit_price.id_for_label }}" class="form-label">{{ form.unit_price.label }} *</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
                                 {{ form.unit_price }}
                             </div>
+                            {% if form.unit_price.help_text %}
+                                <div class="form-text">{{ form.unit_price.help_text }}</div>
+                            {% endif %}
                             {% if form.unit_price.errors %}
                                 <div class="text-danger">{{ form.unit_price.errors }}</div>
                             {% endif %}
@@ -60,4 +69,29 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updatePrice() {
+    var select = document.getElementById('id_product');
+    var priceInput = document.getElementById('id_unit_price');
+    
+    if (select && select.selectedIndex > 0) {
+        var selectedOption = select.options[select.selectedIndex];
+        var text = selectedOption.text;
+        
+        // Extract price from text like "Product Name - Stock: 10 - Prix: $25.00"
+        var priceMatch = text.match(/Prix: \$([0-9.]+)/);
+        if (priceMatch && priceMatch[1]) {
+            priceInput.value = priceMatch[1];
+        }
+    }
+}
+
+// Auto-populate price on page load if product is already selected
+document.addEventListener('DOMContentLoaded', function() {
+    updatePrice();
+});
+</script>
 {% endblock %}

@@ -47,11 +47,38 @@ class SaleItemForm(forms.ModelForm):
             'unit_price': 'Prix unitaire',
         }
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-control'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01'}),
+            'product': forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'id_product',
+                'onchange': 'updatePrice()'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'value': '1'
+            }),
+            'unit_price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01',
+                'id': 'id_unit_price'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['product'].queryset = Product.objects.filter(is_active=True)
+        # Show only active products
+        products = Product.objects.filter(is_active=True).select_related('stock_level')
+        self.fields['product'].queryset = products
+        
+        # Add help text
+        self.fields['product'].help_text = 'Sélectionnez un produit actif'
+        self.fields['quantity'].help_text = 'Quantité à vendre'
+        self.fields['unit_price'].help_text = 'Prix sera rempli automatiquement'
+        
+        # Custom label to show stock
+        self.fields['product'].label_from_instance = lambda obj: (
+            f"{obj.name} ({obj.sku}) - "
+            f"Stock: {obj.stock_level.current_stock if hasattr(obj, 'stock_level') else '0'} - "
+            f"Prix: ${obj.price}"
+        )

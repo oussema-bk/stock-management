@@ -5,8 +5,11 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse
 import csv
+import io
+from decimal import Decimal
 from .models import Product, Category
 from .forms import ProductForm, CategoryForm
+from stock_app.models import StockLevel
 
 
 @login_required
@@ -131,3 +134,113 @@ def export_products(request):
         ])
     
     return response
+
+
+@login_required
+def import_products(request):
+    """Import products from CSV"""
+    if request.method == 'POST':
+        if 'csv_file' not in request.FILES:
+            messages.error(request, 'Veuillez sélectionner un fichier CSV')
+            return redirect('products_app:import_products')
+        
+        csv_file = request.FILES['csv_file']
+        
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Le fichier doit être au format CSV')
+            return redirect('products_app:import_products')
+        
+        try:
+            # Read the CSV file
+            decoded_file = csv_file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+            
+            created_count = 0
+            updated_count = 0
+            error_count = 0
+            errors = []
+            
+            for row_num, row in enumerate(reader, start=2):
+                try:
+                    # Get or create category
+                    category_name = row.get('Category', '').strip()
+                    if not category_name:
+                        errors.append(f"Ligne {row_num}: Catégorie manquante")
+                        error_count += 1
+                        continue
+                    
+                    category, _ = Category.objects.get_or_create(
+                        name=category_name,
+                        defaults={'description': ''}
+                    )
+                    
+                    # Check if product exists
+                    sku = row.get('SKU', '').strip()
+                    if not sku:
+                        errors.append(f"Ligne {row_num}: SKU manquante")
+                        error_count += 1
+                        continue
+                    
+                    # Prepare product data
+                    product_data = {
+                        'name': row.get('Name', '').strip(),
+                        'description': row.get('Description', '').strip(),
+                        'category': category,
+                        'price': Decimal(row.get('Price', 0)),
+                        'cost_price': Decimal(row.get('Cost_Price', 0)),
+                        'is_active': row.get('Status', 'Active').strip().lower() == 'active'
+                    }
+                    
+                    # Get stock data if present
+                    stock_actuel = row.get('Stock_Actuel', '').strip()
+                    stock_minimum = row.get('Stock_Minimum', '').strip()
+                    
+                    # Create or update product
+                    product, created = Product.objects.update_or_create(
+                        sku=sku,
+                        defaults=product_data
+                    )
+                    
+                    # Create or update stock level if stock data is provided
+                    if stock_actuel or stock_minimum:
+                        stock_level, _ = StockLevel.objects.get_or_create(
+                            product=product,
+                            defaults={
+                                'current_stock': int(stock_actuel) if stock_actuel else 0,
+                                'minimum_stock': int(stock_minimum) if stock_minimum else 0,
+                            }
+                        )
+                        if not created:
+                            if stock_actuel:
+                                stock_level.current_stock = int(stock_actuel)
+                            if stock_minimum:
+                                stock_level.minimum_stock = int(stock_minimum)
+                            stock_level.save()
+                    
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
+                        
+                except Exception as e:
+                    errors.append(f"Ligne {row_num}: {str(e)}")
+                    error_count += 1
+            
+            # Show results
+            if created_count > 0:
+                messages.success(request, f'{created_count} produit(s) créé(s)')
+            if updated_count > 0:
+                messages.success(request, f'{updated_count} produit(s) mis à jour')
+            if error_count > 0:
+                messages.warning(request, f'{error_count} erreur(s) rencontrée(s)')
+                for error in errors[:5]:  # Show first 5 errors
+                    messages.error(request, error)
+            
+            return redirect('products_app:product_list')
+            
+        except Exception as e:
+            messages.error(request, f'Erreur lors de l\'importation: {str(e)}')
+            return redirect('products_app:import_products')
+    
+    return render(request, 'products_app/import_products.html')

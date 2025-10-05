@@ -58,7 +58,7 @@ def main_dashboard(request):
     # Low stock alerts
     low_stock_items = StockLevel.objects.filter(
         current_stock__lte=F('minimum_stock')
-    ).select_related('product')[:5]
+    ).exclude(current_stock=0).select_related('product')[:5]
     
     context = {
         # Product stats

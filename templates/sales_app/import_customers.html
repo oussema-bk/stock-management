@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Importer des Clients{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-upload"></i> Importer des Clients</h2>
+            <p class="text-muted">Importez plusieurs clients à la fois en utilisant un fichier CSV</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upload Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> Télécharger le fichier CSV</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="csv_file" class="form-label">Sélectionnez le fichier CSV</label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                            <div class="form-text">Le fichier doit être au format CSV (.csv)</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Important:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Le fichier doit contenir les en-têtes de colonnes</li>
+                                <li>La colonne obligatoire est: <code>Name</code></li>
+                                <li>Si un client avec le même nom ou email existe, il sera mis à jour</li>
+                                <li>Les autres colonnes sont optionnelles</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Importer
+                            </button>
+                            <a href="{% url 'sales_app:customer_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Format Example -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Format du fichier CSV</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Exemple de format CSV:</strong></p>
+                    <div class="bg-light p-3 rounded mb-3" style="font-family: monospace; overflow-x: auto;">
+                        <pre class="mb-0">Name,Email,Phone,Address
+Jean Dupont,jean.dupont@email.com,0612345678,"123 Rue de Paris, Paris 75001"
+Marie Martin,marie.martin@email.com,0623456789,"456 Avenue des Champs, Lyon 69000"
+Pierre Bernard,pierre.bernard@email.com,0634567890,"789 Boulevard Victor Hugo, Marseille 13000"
+Sophie Dubois,sophie.dubois@email.com,0645678901,"321 Rue de la République, Toulouse 31000"
+Luc Petit,luc.petit@email.com,0656789012,"654 Avenue Jean Jaurès, Nice 06000"</pre>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Colonne</th>
+                                    <th>Obligatoire</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>Name</code></td>
+                                    <td><span class="badge bg-danger">Oui</span></td>
+                                    <td>Nom complet du client</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Email</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Adresse email du client</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Phone</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Numéro de téléphone</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Address</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Adresse complète du client</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Note:</strong>
+                        <p class="mb-0 mt-2">Si l'adresse contient des virgules, entourez-la de guillemets doubles comme dans l'exemple ci-dessus.</p>
+                    </div>
+
+                    <div class="alert alert-success mt-3">
+                        <i class="bi bi-lightbulb"></i> <strong>Astuce:</strong>
+                        <p class="mb-0 mt-2">Vous pouvez exporter vos clients actuels pour obtenir un fichier d'exemple, puis le modifier et le réimporter.</p>
+                        <a href="{% url 'sales_app:export_customers' %}" class="btn btn-sm btn-success mt-2">
+                            <i class="bi bi-download"></i> Exporter les clients actuels
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

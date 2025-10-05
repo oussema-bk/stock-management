@@ -147,6 +147,16 @@
                         <a href="{% url 'sales_app:add_sale_item' sale.pk %}" class="btn btn-success">
                             <i class="bi bi-plus"></i> Add Item
                         </a>
+                        <a href="{% url 'sales_app:complete_sale' sale.pk %}" class="btn btn-primary" 
+                           onclick="return confirm('Confirm completing this sale? Stock will be reduced automatically.')">
+                            <i class="bi bi-check-circle"></i> Complete Sale
+                        </a>
+                    {% endif %}
+                    {% if sale.status == 'COMPLETED' or sale.status == 'PENDING' %}
+                        <a href="{% url 'sales_app:cancel_sale' sale.pk %}" class="btn btn-danger" 
+                           onclick="return confirm('Confirm cancelling this sale? Stock will be restored if completed.')">
+                            <i class="bi bi-x-circle"></i> Cancel Sale
+                        </a>
                     {% endif %}
                 </div>
             </div>

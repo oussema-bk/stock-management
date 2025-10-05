@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Importer des Produits{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-upload"></i> Importer des Produits</h2>
+            <p class="text-muted">Importez plusieurs produits à la fois en utilisant un fichier CSV</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upload Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> Télécharger le fichier CSV</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="csv_file" class="form-label">Sélectionnez le fichier CSV</label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                            <div class="form-text">Le fichier doit être au format CSV (.csv)</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Important:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Le fichier doit contenir les en-têtes de colonnes</li>
+                                <li>Les colonnes obligatoires sont: <code>Name</code>, <code>SKU</code>, <code>Category</code>, <code>Price</code>, <code>Cost_Price</code></li>
+                                <li>Si un produit avec le même SKU existe, il sera mis à jour</li>
+                                <li>Les catégories seront créées automatiquement si elles n'existent pas</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Importer
+                            </button>
+                            <a href="{% url 'products_app:product_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Format Example -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Format du fichier CSV</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Exemple de format CSV:</strong></p>
+                    <div class="bg-light p-3 rounded mb-3" style="font-family: monospace; overflow-x: auto;">
+                        <pre class="mb-0">Name,SKU,Category,Price,Cost_Price,Status,Description,Stock_Actuel,Stock_Minimum
+Résistance 10K,RES-10K,Résistances,0.50,0.25,Active,Résistance 10K Ohm 1/4W,500,100
+Condensateur 100uF,CAP-100UF,Condensateurs,1.20,0.60,Active,Condensateur électrolytique 100uF 25V,200,50
+LED Rouge 5mm,LED-RED-5MM,LEDs,0.30,0.15,Active,LED rouge 5mm diffuse,1000,200
+Arduino Uno,ARD-UNO,Microcontrôleurs,25.00,15.00,Active,Carte Arduino Uno R3,50,10
+Breadboard 830,BRD-830,Accessoires,5.50,3.00,Active,Breadboard 830 points,75,20</pre>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Colonne</th>
+                                    <th>Obligatoire</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>Name</code></td>
+                                    <td><span class="badge bg-danger">Oui</span></td>
+                                    <td>Nom du produit</td>
+                                </tr>
+                                <tr>
+                                    <td><code>SKU</code></td>
+                                    <td><span class="badge bg-danger">Oui</span></td>
+                                    <td>Référence unique du produit</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Category</code></td>
+                                    <td><span class="badge bg-danger">Oui</span></td>
+                                    <td>Nom de la catégorie</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Price</code></td>
+                                    <td><span class="badge bg-danger">Oui</span></td>
+                                    <td>Prix de vente (format: 10.50)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Cost_Price</code></td>
+                                    <td><span class="badge bg-danger">Oui</span></td>
+                                    <td>Prix d'achat (format: 5.25)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Status</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Active ou Inactive (défaut: Active)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Description</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Description du produit</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Stock_Actuel</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Quantité actuelle en stock</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Stock_Minimum</code></td>
+                                    <td><span class="badge bg-warning">Non</span></td>
+                                    <td>Seuil minimum de stock pour alertes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-success mt-3">
+                        <i class="bi bi-lightbulb"></i> <strong>Astuce:</strong>
+                        <p class="mb-0 mt-2">Vous pouvez exporter vos produits actuels pour obtenir un fichier d'exemple, puis le modifier et le réimporter.</p>
+                        <a href="{% url 'products_app:export_products' %}" class="btn btn-sm btn-success mt-2">
+                            <i class="bi bi-download"></i> Exporter les produits actuels
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -23,7 +23,7 @@ def stock_dashboard(request):
     # Low stock alerts
     low_stock_items = StockLevel.objects.filter(
         current_stock__lte=F('minimum_stock')
-    ).select_related('product')
+    ).exclude(current_stock=0).select_related('product')
     
     context = {
         'total_products': total_products,
@@ -104,25 +104,46 @@ def add_stock_movement(request):
         if form.is_valid():
             movement = form.save(commit=False)
             movement.created_by = request.user
-            movement.save()
             
-            # Update stock level
-            stock_level, created = StockLevel.objects.get_or_create(product=movement.product)
+            # Get or create stock level
+            stock_level, created = StockLevel.objects.get_or_create(
+                product=movement.product
+            )
+            
+            # Calculate new stock level
             if movement.movement_type == 'IN':
-                stock_level.current_stock += movement.quantity
+                new_stock = stock_level.current_stock + movement.quantity
             elif movement.movement_type == 'OUT':
-                stock_level.current_stock -= movement.quantity
+                new_stock = stock_level.current_stock - movement.quantity
             elif movement.movement_type == 'ADJUSTMENT':
-                stock_level.current_stock = movement.quantity
+                new_stock = movement.quantity
+            else:
+                new_stock = stock_level.current_stock
             
+            # Prevent negative stock
+            if new_stock < 0:
+                messages.error(
+                    request,
+                    f'Opération impossible! Stock insuffisant pour {movement.product.name}. '
+                    f'Stock actuel: {stock_level.current_stock}, '
+                    f'Tentative de retrait: {movement.quantity}'
+                )
+                return redirect('stock_app:movements')
+            
+            # Save movement and update stock
+            movement.save()
+            stock_level.current_stock = new_stock
             stock_level.save()
             
-            messages.success(request, 'Stock movement recorded successfully!')
+            messages.success(request, 'Mouvement de stock enregistré avec succès!')
             return redirect('stock_app:movements')
     else:
         form = StockMovementForm()
     
-    return render(request, 'stock_app/movement_form.html', {'form': form, 'title': 'Add Stock Movement'})
+    return render(request, 'stock_app/movement_form.html', {
+        'form': form,
+        'title': 'Add Stock Movement'
+    })
 
 
 @login_required
@@ -148,7 +169,7 @@ def update_stock_level(request, pk):
 def stock_alerts(request):
     low_stock_items = StockLevel.objects.filter(
         current_stock__lte=F('minimum_stock')
-    ).select_related('product')
+    ).exclude(current_stock=0).select_related('product')
     
     return render(request, 'stock_app/alerts.html', {'low_stock_items': low_stock_items})
 

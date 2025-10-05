@@ -149,48 +149,66 @@ class Command(BaseCommand):
         
         # Create sales
         self.stdout.write('Creating sales...')
+        completed_count = 0
+        pending_count = 0
+        failed_count = 0
+        
         for i in range(options['sales']):
             customer = random.choice(customers)
+            
+            # All sales start as PENDING
             sale = Sale.objects.create(
                 customer=customer,
-                status=random.choice(['COMPLETED', 'COMPLETED', 'COMPLETED', 'PENDING']),
+                status='PENDING',
                 notes=fake.text(max_nb_chars=100),
                 created_by=admin_user
             )
             
             # Add 1-5 items to each sale
             num_items = random.randint(1, 5)
-            sale_products = random.sample(products, min(num_items, len(products)))
+            # Only use active products with stock
+            available_products = [
+                p for p in products 
+                if p.is_active and hasattr(p, 'stock_level') and p.stock_level.current_stock > 0
+            ]
+            
+            if not available_products:
+                sale.delete()
+                continue
+            
+            sale_products = random.sample(available_products, min(num_items, len(available_products)))
             
             for product in sale_products:
-                quantity = random.randint(1, 10)
-                SaleItem.objects.create(
-                    sale=sale,
-                    product=product,
-                    quantity=quantity,
-                    unit_price=product.price
-                )
+                # Limit quantity to available stock
+                stock_level = StockLevel.objects.get(product=product)
+                max_qty = min(10, stock_level.current_stock)
+                if max_qty > 0:
+                    quantity = random.randint(1, max_qty)
+                    SaleItem.objects.create(
+                        sale=sale,
+                        product=product,
+                        quantity=quantity,
+                        unit_price=product.price
+                    )
             
             # Calculate total
             sale.calculate_total()
             
-            # Update stock if sale is completed
-            if sale.status == 'COMPLETED':
-                for item in sale.sale_items.all():
-                    stock_level = StockLevel.objects.get(product=item.product)
-                    stock_level.current_stock -= item.quantity
-                    stock_level.save()
-                    
-                    StockMovement.objects.create(
-                        product=item.product,
-                        movement_type='OUT',
-                        quantity=item.quantity,
-                        reference=f'SALE-{sale.id}',
-                        notes=f'Sale to {customer.name}',
-                        created_by=admin_user
-                    )
+            # Randomly complete 75% of sales, keep 25% pending
+            should_complete = random.random() < 0.75
+            
+            if should_complete:
+                try:
+                    # Use the new automatic stock reduction method
+                    sale.complete_sale(admin_user)
+                    completed_count += 1
+                except ValueError as e:
+                    # If stock insufficient, keep as pending
+                    pending_count += 1
+            else:
+                pending_count += 1
         
-        self.stdout.write(f'Created {options["sales"]} sales')
+        self.stdout.write(f'Created sales: {completed_count} completed, {pending_count} pending')
         
         self.stdout.write(
             self.style.SUCCESS(
